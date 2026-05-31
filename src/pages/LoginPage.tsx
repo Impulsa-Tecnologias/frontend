@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { useTheme } from "../hook/ThemeProvider";
+import { authApi } from "../api/auth";
+import { useAuth } from "../context/AuthContext";
 
 interface LoginProps {
   onGoToRegister: () => void;
@@ -7,12 +9,33 @@ interface LoginProps {
 
 interface RegisterProps {
   onGoToLogin: () => void;
+  onGoToOnboarding: () => void;
 }
 
 function Login({ onGoToRegister }: LoginProps) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [show, setShow] = useState(false);
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+  const { login } = useAuth();
+
+  const handleLogin = async () => {
+    setError("");
+    if (!email.trim() || !password.trim()) {
+      setError("Todos los campos son obligatorios.");
+      return;
+    }
+    try {
+      setLoading(true);
+      const res = await authApi.login({ email, password });
+      login(res.token, res.username);
+    } catch (e: any) {
+      setError(e.message || "Error al iniciar sesión.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-white dark:bg-gray-950 flex items-center justify-center px-6">
@@ -67,8 +90,14 @@ function Login({ onGoToRegister }: LoginProps) {
           </div>
         </div>
 
-        <button className="w-full py-4 rounded-lg text-sm font-medium bg-gray-900 text-white hover:bg-black dark:bg-gray-100 dark:text-gray-900 dark:hover:bg-white transition-colors">
-          Inicia sesión
+        {error && <p className="text-xs text-red-500">{error}</p>}
+
+        <button
+          onClick={handleLogin}
+          disabled={loading}
+          className="w-full py-4 rounded-lg text-sm font-medium bg-gray-900 text-white hover:bg-black dark:bg-gray-100 dark:text-gray-900 dark:hover:bg-white transition-colors disabled:opacity-50"
+        >
+          {loading ? "Ingresando..." : "Inicia sesión"}
         </button>
 
         <p className="text-sm text-center text-gray-500 dark:text-gray-400">
@@ -82,10 +111,25 @@ function Login({ onGoToRegister }: LoginProps) {
   );
 }
 
-function Register({ onGoToLogin }: RegisterProps) {
+function Register({ onGoToLogin, onGoToOnboarding }: RegisterProps) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [show, setShow] = useState(false);
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const handleRegister = async () => {
+    setError("");
+    if (!email.trim() || !password.trim()) {
+      setError("Todos los campos son obligatorios.");
+      return;
+    }
+    // El registro completo se hace al final del onboarding
+    // Aquí solo guardamos email y password en sessionStorage para continuar
+    sessionStorage.setItem("reg_email", email);
+    sessionStorage.setItem("reg_password", password);
+    onGoToOnboarding();
+  };
 
   return (
     <div className="min-h-screen bg-white dark:bg-gray-950 flex items-center justify-center px-6">
@@ -139,8 +183,14 @@ function Register({ onGoToLogin }: RegisterProps) {
           </div>
         </div>
 
-        <button className="w-full py-4 rounded-lg text-sm font-medium bg-gray-900 text-white hover:bg-black dark:bg-gray-100 dark:text-gray-900 dark:hover:bg-white transition-colors">
-          Crear cuenta
+        {error && <p className="text-xs text-red-500">{error}</p>}
+
+        <button
+          onClick={handleRegister}
+          disabled={loading}
+          className="w-full py-4 rounded-lg text-sm font-medium bg-gray-900 text-white hover:bg-black dark:bg-gray-100 dark:text-gray-900 dark:hover:bg-white transition-colors disabled:opacity-50"
+        >
+          {loading ? "Creando cuenta..." : "Crear cuenta"}
         </button>
 
         <p className="text-xs text-gray-500 dark:text-gray-400">
@@ -161,7 +211,11 @@ function Register({ onGoToLogin }: RegisterProps) {
   );
 }
 
-export default function LoginPage() {
+interface LoginPageProps {
+  onGoToOnboarding: () => void;
+}
+
+export default function LoginPage({ onGoToOnboarding }: LoginPageProps) {
   const [view, setView] = useState<"login" | "register">("login");
   const { theme, toggleTheme } = useTheme();
 
@@ -185,7 +239,7 @@ export default function LoginPage() {
       </button>
       {view === "login"
         ? <Login onGoToRegister={() => setView("register")} />
-        : <Register onGoToLogin={() => setView("login")} />}
+        : <Register onGoToLogin={() => setView("login")} onGoToOnboarding={onGoToOnboarding} />}
     </div>
   );
 }

@@ -1,12 +1,14 @@
 import './App.css'
+import { useState } from 'react'
 import LoginPage from './pages/LoginPage'
 import QuestionPage from './pages/QuestionPage'
 
-function App() {
+export type AppView = "login" | "onboarding"
 
-  return (
-    <QuestionPage/>
-  )
+export default function App() {
+  const [view, setView] = useState<AppView>("login")
+
+  if (view === "onboarding") return <QuestionPage />
+
+  return <LoginPage onGoToOnboarding={() => setView("onboarding")} />
 }
-
-export default App

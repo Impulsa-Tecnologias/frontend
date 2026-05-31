@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { useTheme } from "../hook/ThemeProvider";
+import { authApi } from "../api/auth";
+import { useAuth } from "../context/AuthContext";
 
 interface StepProps {
   onNext: () => void;
@@ -37,7 +39,11 @@ function Step1({ onNext }: StepProps) {
 }
 
 // Step 2 - Alergia
-function Step2({ onNext, onBack }: StepProps) {
+interface Step2Props {
+  onNext: (alergy: string) => void;
+  onBack: () => void;
+}
+function Step2({ onNext, onBack }: Step2Props) {
   const [alergico, setAlergico] = useState<"si" | "no" | null>(null);
   const [cual, setCual] = useState("");
   const [error, setError] = useState("");
@@ -46,7 +52,7 @@ function Step2({ onNext, onBack }: StepProps) {
     if (!alergico) { setError("Selecciona una opción."); return; }
     if (alergico === "si" && !cual.trim()) { setError("Escribe a qué eres alérgico."); return; }
     setError("");
-    onNext();
+    onNext(alergico === "si" ? cual.trim() : "ninguna");
   };
 
   return (
@@ -97,17 +103,25 @@ function Step2({ onNext, onBack }: StepProps) {
 }
 
 // Step 3 - Nivel de cocina
-function Step3({ onNext, onBack }: StepProps) {
-  const [nivel, setNivel] = useState<string | null>(null);
+interface Step3Props {
+  onNext: (level: "BASICO" | "MEDIO" | "ALTO") => void;
+  onBack: () => void;
+}
+function Step3({ onNext, onBack }: Step3Props) {
+  const [nivel, setNivel] = useState<"BASICO" | "MEDIO" | "ALTO" | null>(null);
   const [error, setError] = useState("");
 
   const handleNext = () => {
     if (!nivel) { setError("Selecciona tu nivel de cocina."); return; }
     setError("");
-    onNext();
+    onNext(nivel);
   };
 
-  const opciones = ["Básico", "Media", "Avanzado"];
+  const opciones: { label: string; value: "BASICO" | "MEDIO" | "ALTO" }[] = [
+    { label: "Básico", value: "BASICO" },
+    { label: "Media", value: "MEDIO" },
+    { label: "Avanzado", value: "ALTO" },
+  ];
 
   return (
     <div className="flex flex-col gap-5">
@@ -115,10 +129,10 @@ function Step3({ onNext, onBack }: StepProps) {
 
       <div className="flex flex-col gap-3">
         {opciones.map((op) => (
-          <label key={op} className="flex items-center gap-2 cursor-pointer">
-            <input type="radio" name="nivel" checked={nivel === op} onChange={() => { setNivel(op); setError(""); }}
+          <label key={op.value} className="flex items-center gap-2 cursor-pointer">
+            <input type="radio" name="nivel" checked={nivel === op.value} onChange={() => { setNivel(op.value); setError(""); }}
               className="accent-gray-900 dark:accent-gray-100 w-4 h-4"/>
-            <span className="text-sm text-gray-800 dark:text-gray-200">{op}</span>
+            <span className="text-sm text-gray-800 dark:text-gray-200">{op.label}</span>
           </label>
         ))}
       </div>
@@ -138,16 +152,20 @@ function Step3({ onNext, onBack }: StepProps) {
 }
 
 // Step 4 - Gracias
-function Step4({ onNext, onBack }: StepProps) {
+interface Step4Props {
+  onBack: () => void;
+  loading: boolean;
+  error: string;
+}
+function Step4({ onBack, loading, error }: Step4Props) {
   return (
     <div className="flex flex-col items-center text-center gap-6">
       <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-50 mt-4">Gracias por tu colaboración</h1>
+      {error && <p className="text-xs text-red-500">{error}</p>}
+      {loading && <p className="text-sm text-gray-500 dark:text-gray-400">Creando tu cuenta...</p>}
       <div className="flex justify-between w-full mt-2">
-        <button onClick={onBack} className="p-3 rounded-full border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+        <button onClick={onBack} disabled={loading} className="p-3 rounded-full border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors disabled:opacity-50">
           <ArrowLeft />
-        </button>
-        <button onClick={onNext} className="p-3 rounded-full bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 hover:opacity-80 transition-opacity">
-          <ArrowRight />
         </button>
       </div>
     </div>
@@ -156,16 +174,52 @@ function Step4({ onNext, onBack }: StepProps) {
 
 export default function QuestionPage() {
   const [step, setStep] = useState(0);
+  const [allergy, setAllergy] = useState("");
+  const [kitchenLevel, setKitchenLevel] = useState<"BASICO" | "MEDIO" | "ALTO">("BASICO");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
   const { theme, toggleTheme } = useTheme();
+  const { login } = useAuth();
 
   const next = () => setStep((s) => s + 1);
   const back = () => setStep((s) => s - 1);
 
+  const handleStep2Next = (alergy: string) => {
+    setAllergy(alergy);
+    next();
+  };
+
+  const handleStep3Next = async (level: "BASICO" | "MEDIO" | "ALTO") => {
+    setKitchenLevel(level);
+    setError("");
+    setLoading(true);
+    next(); // Avanza al step 4 (gracias) mientras registra
+
+    const email = sessionStorage.getItem("reg_email") ?? "";
+    const password = sessionStorage.getItem("reg_password") ?? "";
+
+    try {
+      console.log(email)
+      console.log(password)
+      console.log(allergy)
+      console.log(level)
+      const res = await authApi.register({ email, password, allergy, kitchenLevel: level });
+      sessionStorage.removeItem("reg_email");
+      sessionStorage.removeItem("reg_password");
+      login(res.token, res.username);
+    } catch (e: any) {
+      setError(e.message || "Error al crear la cuenta.");
+      setStep(3); // Se queda en gracias mostrando el error
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const steps = [
     <Step1 onNext={next} />,
-    <Step2 onNext={next} onBack={back} />,
-    <Step3 onNext={next} onBack={back} />,
-    <Step4 onNext={next} onBack={back} />,
+    <Step2 onNext={handleStep2Next} onBack={back} />,
+    <Step3 onNext={handleStep3Next} onBack={back} />,
+    <Step4 onBack={back} loading={loading} error={error} />,
   ];
 
   return (
@@ -186,8 +240,8 @@ export default function QuestionPage() {
           </svg>
         )}
       </button>
+
       <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-800 w-full max-w-sm p-8 transition-colors duration-300">
-        {/* Dots */}
         <div className="flex justify-center gap-2 mb-6">
           {[0, 1, 2, 3].map((i) => (
             <div key={i} className={`h-1.5 rounded-full transition-all duration-300 ${i === step ? "w-6 bg-gray-900 dark:bg-gray-100" : "w-1.5 bg-gray-300 dark:bg-gray-700"}`} />

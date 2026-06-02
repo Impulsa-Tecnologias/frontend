@@ -1,10 +1,10 @@
 import { createContext, useContext, useState, type ReactNode } from "react";
 
-type AuthUser = { token: string; username: string } | null;
+type AuthUser = { token: string; email: string; rol: string } | null;
 
 type AuthContextType = {
     user: AuthUser;
-    login: (token: string, username: string) => void;
+    login: (token: string, email: string, rol: string) => void;
     logout: () => void;
 };
 
@@ -15,17 +15,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Persistencia: carga token de localStorage al iniciar
     const [user, setUser] = useState<AuthUser>(() => {
         const token = localStorage.getItem("token");
-        const username = localStorage.getItem("username");
-        return token && username ? { token, username } : null;
+        const email = localStorage.getItem("email");
+        const rol = localStorage.getItem("rol");
+        return token && email && rol ? { token, email, rol } : null;
     });
-    function login(token: string, username: string) {
+    function login(token: string, email: string, rol: string) {
         localStorage.setItem("token", token);
-        localStorage.setItem("username", username);
-        setUser({ token, username });
+        localStorage.setItem("email", email);
+        localStorage.setItem("rol", rol);
+        setUser({ token, email, rol });
     }
     function logout() {
         localStorage.removeItem("token");
-        localStorage.removeItem("username");
+        localStorage.removeItem("email");
+        localStorage.removeItem("rol");
         setUser(null);
     }
     return (

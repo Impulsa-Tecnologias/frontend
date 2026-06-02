@@ -74,7 +74,7 @@ export default function SidebarMenu({ onClose, onNavigate, current }: Props) {
               <circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
             </svg>
           </div>
-          <span className="text-sm text-gray-700 dark:text-gray-300 truncate max-w-[120px]">{user?.username ?? "Email"}</span>
+          <span className="text-sm text-gray-700 dark:text-gray-300 truncate max-w-[120px]">{user?.email ?? "Email"}</span>
         </div>
         <button onClick={logout} className="text-gray-400 hover:text-red-500 transition-colors" title="Cerrar sesión">
           <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>

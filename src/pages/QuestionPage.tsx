@@ -75,9 +75,7 @@ function Step2({ onNext, onBack }: Step2Props) {
               placeholder="¿Cuál?"
               className="w-full border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-600 outline-none focus:ring-2 focus:ring-gray-400 dark:focus:ring-gray-600"
             />
-            <p className="text-xs text-yellow-700 bg-yellow-50 dark:bg-yellow-900/30 dark:text-yellow-300 border border-yellow-200 dark:border-yellow-700 rounded-lg p-2 mt-2">
-              Nota: escribe las alergias separadas por comas. Ejemplo: Maní, pasas, etc.
-            </p>
+<p className="text-xs text-yellow-700 dark:text-yellow-300 mt-1">Nota: escribe las alergias separadas por comas. Ej: Maní, pasas, etc.</p>
           </div>
         )}
 
@@ -199,14 +197,10 @@ export default function QuestionPage() {
     const password = sessionStorage.getItem("reg_password") ?? "";
 
     try {
-      console.log(email)
-      console.log(password)
-      console.log(allergy)
-      console.log(level)
       const res = await authApi.register({ email, password, allergy, kitchenLevel: level });
       sessionStorage.removeItem("reg_email");
       sessionStorage.removeItem("reg_password");
-      login(res.token, res.username);
+      login(res.token, res.email, res.rol);
     } catch (e: any) {
       setError(e.message || "Error al crear la cuenta.");
       setStep(3); // Se queda en gracias mostrando el error

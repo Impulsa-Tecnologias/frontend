@@ -3,8 +3,8 @@ import { chatsApi, type Chat, type Message } from "../api/Chats";
 
 const objectives = [
   "Aprender recetas nuevas",
-  "Mejorar técnicas",
-  "Cocinar más saludable",
+  "Mejorar tecnicas",
+  "Cocinar mas saludable",
   "Reducir desperdicios",
   "Cocinar para eventos",
   "Experimentar sabores",
@@ -44,8 +44,10 @@ export default function ChatPage() {
   }, [messages]);
 
   const createChat = async () => {
-    const objective = [...selectedObjectives, otroObjective].filter(Boolean).join(", ");
+    const objective = [...selectedObjectives, otroObjective].filter(Boolean).join(" ");
     if (!chatName.trim()) { setError("Escribe un nombre para el chat."); return; }
+    if (!objective.trim()) { setError("Selecciona al menos un objetivo."); return; }
+    if (!objective.trim()) { setError("Selecciona al menos un objetivo."); return; }
     try {
       const newChat = await chatsApi.create({ name: chatName, foodObjective: objective });
       setChats((prev) => [...prev, newChat]);
@@ -77,8 +79,17 @@ export default function ChatPage() {
     setMessage("");
     setSending(true);
     try {
-      const res = await chatsApi.sendMessage(activeChat.id, content);
-      setMessages((prev) => [...prev, res.userMessage, res.botMessage]);
+      // Add user message optimistically
+      const userMsg: Message = {
+        id: Date.now(),
+        chatId: activeChat.id,
+        sender: "USUARIO",
+        content,
+        sendDate: new Date().toISOString(),
+      };
+      setMessages((prev) => [...prev, userMsg]);
+      const botMsg = await chatsApi.sendMessage(activeChat.id, content);
+      setMessages((prev) => [...prev, botMsg]);
     } catch (e: any) {
       setError(e.message);
     } finally {
@@ -105,18 +116,18 @@ export default function ChatPage() {
       </div>
 
       <div className="flex-1 overflow-y-auto flex flex-col gap-4 pb-4">
-        {messages.map((msg) => (
-          <div key={msg.id} className={`flex gap-2 ${msg.sender === "USER" ? "flex-row-reverse" : "flex-row"}`}>
+        {messages.filter(Boolean).map((msg) => (
+          <div key={msg.id} className={`flex gap-2 ${msg.sender?.toUpperCase() === "USUARIO" ? "flex-row-reverse" : "flex-row"}`}>
             <div className="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center shrink-0">
               <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-gray-500" fill="currentColor" viewBox="0 0 24 24">
                 <circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
               </svg>
             </div>
-            <div className={`max-w-[70%] flex flex-col gap-1 ${msg.sender === "USER" ? "items-end" : "items-start"}`}>
-              <p className={`text-sm px-3 py-2 rounded-xl ${msg.sender === "USER" ? "bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900" : "bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200"}`}>
+            <div className={`max-w-[70%] flex flex-col gap-1 ${msg.sender?.toUpperCase() === "USUARIO" ? "items-end" : "items-start"}`}>
+              <p className={`text-sm px-3 py-2 rounded-xl ${msg.sender?.toUpperCase() === "USUARIO" ? "bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900" : "bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200"}`}>
                 {msg.content}
               </p>
-              <span className="text-xs text-gray-400">{msg.date}</span>
+              <span className="text-xs text-gray-400">{msg.sendDate ? new Date(msg.sendDate).toLocaleDateString() : ""}</span>
             </div>
           </div>
         ))}

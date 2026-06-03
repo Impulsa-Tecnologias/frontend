@@ -1,21 +1,28 @@
 import { http } from "./http";
 
-export type UpdateProfileDto = {
-  allergy?: string;
-  kitchenLevel?: "BASICO" | "MEDIO" | "ALTO";
-  password?: string;
+export type Recipe = {
+  id: number;
+  recipe_title: string;
+  recipe_content: string;
+  chat_id?: number;
 };
 
-export type UserProfile = {
-  email: string;
-  allergy: string;
-  kitchenLevel: string;
+export type SaveRecipeDto = {
+  chat_id?: number;
+  recipe_title: string;
+  recipe_content: string;
 };
 
-export const usersApi = {
-  updateProfile: (dto: UpdateProfileDto) =>
-    http<UserProfile>("/api/v1/users/profile", {
-      method: "PUT",
+export const recipesApi = {
+  getAll: () =>
+    http<Recipe[]>("/api/v1/recipes/saved"),
+
+  save: (dto: SaveRecipeDto) =>
+    http<Recipe>("/api/v1/recipes/saved", {
+      method: "POST",
       body: JSON.stringify(dto),
     }),
+
+  delete: (id: number) =>
+    http<void>(`/api/v1/recipes/saved/${id}`, { method: "DELETE" }),
 };

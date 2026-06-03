@@ -3,7 +3,7 @@ import { http } from "./http";
 export type Chat = {
   id: number;
   name: string;
-  foodObjective: string;
+  food_objective: string;
 };
 
 export type CreateChatDto = {
@@ -13,9 +13,10 @@ export type CreateChatDto = {
 
 export type Message = {
   id: number;
+  chatId: number;
+  sender: "USUARIO" | "BOT";
   content: string;
-  sender: "USER" | "BOT";
-  date: string;
+  sendDate: string;
 };
 
 export const chatsApi = {
@@ -35,7 +36,7 @@ export const chatsApi = {
     http<Message[]>(`/api/v1/chats/${id}/messages`),
 
   sendMessage: (id: number, content: string) =>
-    http<{ userMessage: Message; botMessage: Message }>(
+    http<Message>(
       `/api/v1/chats/${id}/messages`,
       { method: "POST", body: JSON.stringify({ content }) }
     ),

@@ -10,9 +10,19 @@ const objectives = [
   "Experimentar sabores",
 ];
 
-export default function ChatPage() {
+interface ChatPageProps {
+  initialChat?: Chat | null;
+  onChatCreated?: () => void;
+}
+
+export default function ChatPage({ initialChat, onChatCreated }: ChatPageProps) {
+  console.log("ChatPage render - initialChat:", initialChat);
   const [chats, setChats] = useState<Chat[]>([]);
-  const [activeChat, setActiveChat] = useState<Chat | null>(null);
+  const [activeChat, setActiveChat] = useState<Chat | null>(initialChat ?? null);
+
+  useEffect(() => {
+    if (initialChat) setActiveChat(initialChat);
+  }, [initialChat]);
   const [messages, setMessages] = useState<Message[]>([]);
   const [message, setMessage] = useState("");
   const [editingChat, setEditingChat] = useState<Chat | null>(null);
@@ -52,6 +62,7 @@ export default function ChatPage() {
       const newChat = await chatsApi.create({ name: chatName, foodObjective: objective });
       setChats((prev) => [...prev, newChat]);
       setActiveChat(newChat);
+      onChatCreated?.();
       setShowNewChat(false);
       setChatName("");
       setSelectedObjectives([]);

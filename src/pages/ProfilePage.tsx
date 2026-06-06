@@ -7,8 +7,10 @@ type View = "perfil" | "info" | "password";
 export default function ProfilePage() {
   const { user } = useAuth();
   const [view, setView] = useState<View>("perfil");
-  const [allergy, setAllergy] = useState("");
-  const [kitchenLevel, setKitchenLevel] = useState<"BASICO" | "MEDIO" | "ALTO" | "">("BASICO");
+  const [allergy, setAllergy] = useState(user?.allergy ?? "");
+  const [kitchenLevel, setKitchenLevel] = useState<"BASICO" | "MEDIO" | "ALTO" | "">(
+    (user?.kitchenLevel as "BASICO" | "MEDIO" | "ALTO") ?? ""
+  );
   const [password, setPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");

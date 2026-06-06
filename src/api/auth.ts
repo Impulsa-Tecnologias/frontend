@@ -4,6 +4,8 @@ export type AuthResponse = {
   token: string;
   email: string;
   rol: string;
+  allergy: string;
+  kitchenLevel: string;
 };
 
 export type LoginDto = {

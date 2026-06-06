@@ -29,7 +29,7 @@ function Login({ onGoToRegister }: LoginProps) {
     try {
       setLoading(true);
       const res = await authApi.login({ email, password });
-      login(res.token, res.email, res.rol);
+      login(res.token, res.email, res.rol, res.allergy ?? "", res.kitchenLevel ?? "");
     } catch (e: any) {
       setError(e.message || "Error al iniciar sesión.");
     } finally {

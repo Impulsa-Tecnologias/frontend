@@ -75,7 +75,7 @@ function Step2({ onNext, onBack }: Step2Props) {
               placeholder="¿Cuál?"
               className="w-full border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-600 outline-none focus:ring-2 focus:ring-gray-400 dark:focus:ring-gray-600"
             />
-<p className="text-xs text-yellow-700 dark:text-yellow-300 mt-1">Nota: escribe las alergias separadas por comas. Ej: Maní, pasas, etc.</p>
+<p className="text-xs text-yellow-700 dark:text-yellow-300 mt-1">Nota: escribe las alergias separadas por espacios. Ej: Maní pasas nueces</p>
           </div>
         )}
 
@@ -170,7 +170,7 @@ function Step4({ onBack, loading, error }: Step4Props) {
   );
 }
 
-export default function QuestionPage() {
+export default function OnboardingPage() {
   const [step, setStep] = useState(0);
   const [allergy, setAllergy] = useState("");
   const [kitchenLevel, setKitchenLevel] = useState<"BASICO" | "MEDIO" | "ALTO">("BASICO");
@@ -200,7 +200,7 @@ export default function QuestionPage() {
       const res = await authApi.register({ email, password, allergy, kitchenLevel: level });
       sessionStorage.removeItem("reg_email");
       sessionStorage.removeItem("reg_password");
-      login(res.token, res.email, res.rol);
+      login(res.token, res.email, res.rol, res.allergy ?? "", res.kitchenLevel ?? "");
     } catch (e: any) {
       setError(e.message || "Error al crear la cuenta.");
       setStep(3); // Se queda en gracias mostrando el error

@@ -2,18 +2,23 @@ import { useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import LoginPage from "../pages/LoginPage";
 import QuestionPage from "../pages/QuestionPage";
+import MainLayout from "../layouts/MainLayout";
+import AdminLayout from "../layouts/AdminLayout";
 
 type GateView = "login" | "onboarding";
 
-export default function AuthGate({ children }: { children: React.ReactNode }) {
-    const { user } = useAuth();
-    const [view, setView] = useState<GateView>("login");
+const ADMIN_ROLES = ["ADMIN", "MASTER"];
 
-    // Si hay sesión activa, muestra el contenido principal
-    if (user) return <>{children}</>;
+export default function AuthGate() {
+  const { user } = useAuth();
+  const [view, setView] = useState<GateView>("login");
 
-    // Sin sesión, maneja login y onboarding
-    if (view === "onboarding") return <QuestionPage />;
+  if (user) {
+    const isAdmin = ADMIN_ROLES.includes(user.rol?.toUpperCase());
+    return isAdmin ? <AdminLayout /> : <MainLayout />;
+  }
 
-    return <LoginPage onGoToOnboarding={() => setView("onboarding")} />;
+  if (view === "onboarding") return <QuestionPage />;
+
+  return <LoginPage onGoToOnboarding={() => setView("onboarding")} />;
 }

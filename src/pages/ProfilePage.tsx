@@ -1,12 +1,13 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "../context/AuthContext";
 import { usersApi } from "../api/Users";
 
 type View = "perfil" | "info" | "password";
 
 export default function ProfilePage() {
-  const { user } = useAuth();
+  const { user, updateProfileData } = useAuth();
   const [view, setView] = useState<View>("perfil");
+
   const [allergy, setAllergy] = useState(user?.allergy ?? "");
   const [kitchenLevel, setKitchenLevel] = useState<"BASICO" | "MEDIO" | "ALTO" | "">(
     (user?.kitchenLevel as "BASICO" | "MEDIO" | "ALTO") ?? ""
@@ -17,6 +18,13 @@ export default function ProfilePage() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (user) {
+      setAllergy(user.allergy ?? "");
+      setKitchenLevel((user.kitchenLevel as "BASICO" | "MEDIO" | "ALTO") ?? "");
+    }
+  }, [user]);
 
   const Avatar = () => (
     <div className="flex flex-col items-center gap-2 mb-4">
@@ -34,6 +42,7 @@ export default function ProfilePage() {
     setLoading(true);
     try {
       await usersApi.updateProfile({ allergy, kitchenLevel });
+      updateProfileData(allergy, kitchenLevel);
       setSuccess("Información actualizada.");
       setView("perfil");
     } catch (e: any) {
@@ -45,13 +54,28 @@ export default function ProfilePage() {
 
   const handleUpdatePassword = async () => {
     setError(""); setSuccess("");
-    if (!newPassword || !confirmPassword) { setError("Todos los campos son obligatorios."); return; }
-    if (newPassword !== confirmPassword) { setError("Las contraseñas no coinciden."); return; }
+
+    if (!password || !newPassword || !confirmPassword) { 
+        setError("Todos los campos son obligatorios."); 
+        return; 
+    }
+
+    if (newPassword !== confirmPassword) { 
+        setError("Las nuevas contraseñas no coinciden."); 
+        return; 
+    }
+
     setLoading(true);
     try {
-      await usersApi.updateProfile({ password: newPassword });
+      await usersApi.updatePassword({ 
+          currentPassword: password, 
+          newPassword: newPassword 
+      });
+      
       setSuccess("Contraseña actualizada.");
-      setPassword(""); setNewPassword(""); setConfirmPassword("");
+      setPassword(""); 
+      setNewPassword(""); 
+      setConfirmPassword("");
       setView("perfil");
     } catch (e: any) {
       setError(e.message);
@@ -64,7 +88,7 @@ export default function ProfilePage() {
     <div className="max-w-sm mx-auto flex flex-col gap-5">
       <Avatar />
 
-<p className="text-xs text-yellow-700 dark:text-yellow-300">Nota: escribe las alergias separadas por espacios. Ej: Maní pasas nueces</p>
+      <p className="text-xs text-yellow-700 dark:text-yellow-300">Nota: escribe las alergias separadas por comas. Ej: Maní pasas nueces</p>
 
       <div className="flex items-center gap-3">
         <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-gray-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
@@ -92,11 +116,11 @@ export default function ProfilePage() {
 
       <div className="flex gap-3">
         <button onClick={handleUpdateProfile} disabled={loading}
-          className="flex-1 py-3 text-sm border border-gray-400 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors disabled:opacity-50">
+          className="flex-1 py-3 text-sm border border-gray-400 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-800 transition-colors cursor-pointer">
           {loading ? "Guardando..." : "Actualizar"}
         </button>
         <button onClick={() => setView("perfil")}
-          className="flex-1 py-3 text-sm border border-gray-400 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+          className="flex-1 py-3 text-sm border border-gray-400 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-800 transition-colors cursor-pointer">
           Cancelar
         </button>
       </div>
@@ -129,11 +153,11 @@ export default function ProfilePage() {
 
       <div className="flex gap-3">
         <button onClick={handleUpdatePassword} disabled={loading}
-          className="flex-1 py-3 text-sm border border-gray-400 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors disabled:opacity-50">
+          className="flex-1 py-3 text-sm border border-gray-400 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-800 transition-colors cursor-pointer">
           {loading ? "Guardando..." : "Actualizar"}
         </button>
         <button onClick={() => setView("perfil")}
-          className="flex-1 py-3 text-sm border border-gray-400 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+          className="flex-1 py-3 text-sm border border-gray-400 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-800 transition-colors cursor-pointer">
           Cancelar
         </button>
       </div>
@@ -149,7 +173,7 @@ export default function ProfilePage() {
           <path d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" strokeLinecap="round"/>
         </svg>
         <input readOnly value={allergy || "Alergias"}
-          className="flex-1 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 text-sm bg-gray-50 dark:bg-gray-800 text-gray-500 placeholder-gray-400 outline-none cursor-default"/>
+          className="flex-1 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 text-sm bg-gray-100 dark:bg-gray-800 text-gray-500 outline-none cursor-not-allowed"/>
       </div>
 
       <div className="flex items-center gap-3">
@@ -157,18 +181,18 @@ export default function ProfilePage() {
           <path d="M12 6v6l4 2" strokeLinecap="round"/><circle cx="12" cy="12" r="9"/>
         </svg>
         <input readOnly value={kitchenLevel || "Nivel de cocina"}
-          className="flex-1 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 text-sm bg-gray-100 dark:bg-gray-800 text-gray-500 outline-none cursor-default"/>
+          className="flex-1 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 text-sm bg-gray-100 dark:bg-gray-800 text-gray-500 outline-none cursor-not-allowed"/>
       </div>
 
       {success && <p className="text-xs text-green-500">{success}</p>}
 
       <div className="flex gap-3">
         <button onClick={() => setView("info")}
-          className="flex-1 py-3 text-sm border border-gray-400 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+          className="hover:bg-gray-300 flex-1 py-3 text-sm border border-gray-400 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 dark:hover:bg-gray-800 transition-colors cursor-pointer">
           Actualizar información
         </button>
         <button onClick={() => setView("password")}
-          className="flex-1 py-3 text-sm border border-gray-400 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+          className="hover:bg-gray-300 flex-1 py-3 text-sm border border-gray-400 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 dark:hover:bg-gray-800 transition-colors cursor-pointer">
           Cambiar contraseña
         </button>
       </div>

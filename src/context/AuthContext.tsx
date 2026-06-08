@@ -6,6 +6,7 @@ type AuthContextType = {
   user: AuthUser;
   login: (token: string, email: string, rol: string, allergy: string, kitchenLevel: string) => void;
   logout: () => void;
+  updateProfileData: (allergy: string, kitchenLevel: string) => void;
 };
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -38,8 +39,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null);
   }
 
+  function updateProfileData(allergy: string, kitchenLevel: string) {
+    if (user) {
+      localStorage.setItem("allergy", allergy);
+      localStorage.setItem("kitchenLevel", kitchenLevel);
+      setUser({ ...user, allergy, kitchenLevel });
+    }
+  }
+
   return (
-    <AuthContext.Provider value={{ user, login, logout }}>
+    <AuthContext.Provider value={{ user, login, logout, updateProfileData }}>
       {children}
     </AuthContext.Provider>
   );

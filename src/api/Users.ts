@@ -26,6 +26,11 @@ export type CreateAdminDto = {
   rol: string
 };
 
+export type UpdatePasswordDto = {
+  currentPassword: string;
+  newPassword: string;
+};
+
 export const usersApi = {
   getAll: () =>
     http<User[]>("/api/v1/users"),
@@ -50,4 +55,11 @@ export const usersApi = {
       method: "PUT",
       body: JSON.stringify(dto),
     }),
+
+  updatePassword: (dto: UpdatePasswordDto) =>
+    http<void>("/api/v1/users/password", {
+      method: "PUT",
+      body: JSON.stringify(dto),
+    }),
+
 };

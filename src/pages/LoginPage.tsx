@@ -3,6 +3,11 @@ import { useTheme } from "../hook/ThemeProvider";
 import { authApi } from "../api/auth";
 import { useAuth } from "../context/AuthContext";
 
+const validateEmail = (email: string): boolean => {
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return emailRegex.test(email.trim());
+};
+
 interface LoginProps {
   onGoToRegister: () => void;
 }
@@ -26,11 +31,18 @@ function Login({ onGoToRegister }: LoginProps) {
       setError("Todos los campos son obligatorios.");
       return;
     }
+
+    if (!validateEmail(email)) {
+      setError("Por favor, ingresa una dirección de correo válida.");
+      return;
+    }
+
     try {
       setLoading(true);
       const res = await authApi.login({ email, password });
       login(res.token, res.email, res.rol, res.allergy ?? "", res.kitchenLevel ?? "");
     } catch (e: any) {
+      console.log(e);
       setError(e.message || "Error al iniciar sesión.");
     } finally {
       setLoading(false);
@@ -79,7 +91,7 @@ function Login({ onGoToRegister }: LoginProps) {
                 className="flex-1 bg-transparent text-sm text-gray-800 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-600 outline-none"
               />
               <button type="button" onClick={() => setShow(!show)} className="text-gray-400 dark:text-gray-600">
-                <svg className="w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                <svg className="w-5 h-5 cursor-pointer" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                   {show
                     ? <><path d="M3 12s3.5-7 9-7 9 7 9 7-3.5 7-9 7-9-7-9-7z" strokeLinecap="round"/><circle cx="12" cy="12" r="3"/></>
                     : <path d="M17.94 17.94A10.07 10.07 0 0112 20c-5.5 0-9-7-9-7a17.6 17.6 0 014.06-5.06M9.9 4.24A9.12 9.12 0 0112 4c5.5 0 9 7 9 7a17.6 17.6 0 01-2.06 3.07M3 3l18 18" strokeLinecap="round"/>
@@ -95,14 +107,14 @@ function Login({ onGoToRegister }: LoginProps) {
         <button
           onClick={handleLogin}
           disabled={loading}
-          className="w-full py-4 rounded-lg text-sm font-medium bg-gray-900 text-white hover:bg-black dark:bg-gray-100 dark:text-gray-900 dark:hover:bg-white transition-colors disabled:opacity-50"
+          className="w-full py-4 rounded-lg text-sm font-medium bg-gray-900 text-white hover:bg-black dark:bg-gray-100 dark:text-gray-900 dark:hover:bg-white transition-colors disabled:opacity-50 cursor-pointer"
         >
           {loading ? "Ingresando..." : "Inicia sesión"}
         </button>
 
         <p className="text-sm text-center text-gray-500 dark:text-gray-400">
           ¿No tienes tu cuenta?{" "}
-          <button onClick={onGoToRegister} className="underline font-medium text-gray-800 dark:text-gray-200">
+          <button onClick={onGoToRegister} className="underline font-medium text-gray-800 dark:text-gray-200 cursor-pointer">
             Ingresa aquí
           </button>
         </p>
@@ -124,11 +136,33 @@ function Register({ onGoToLogin, onGoToOnboarding }: RegisterProps) {
       setError("Todos los campos son obligatorios.");
       return;
     }
-    // El registro completo se hace al final del onboarding
-    // Aquí solo guardamos email y password en sessionStorage para continuar
-    sessionStorage.setItem("reg_email", email);
-    sessionStorage.setItem("reg_password", password);
-    onGoToOnboarding();
+
+    if (!validateEmail(email)) {
+      setError("Por favor, ingresa una dirección de correo válida.");
+      return;
+    }
+
+    try {
+      setLoading(true);
+      
+      const emailExists = await authApi.checkEmail(email);
+      
+      if (emailExists) {
+        setError("Este correo ya está registrado. Por favor, inicia sesión.");
+        setLoading(false);
+        return;
+      }
+
+      // Si no existe, guardamos en local y pasamos al onboarding
+      sessionStorage.setItem("reg_email", email);
+      sessionStorage.setItem("reg_password", password);
+      onGoToOnboarding();
+
+    } catch (e: any) {
+      setError(e.message || "Error al verificar el correo.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -172,7 +206,7 @@ function Register({ onGoToLogin, onGoToOnboarding }: RegisterProps) {
                 className="flex-1 bg-transparent text-sm text-gray-800 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-600 outline-none"
               />
               <button type="button" onClick={() => setShow(!show)} className="text-gray-400 dark:text-gray-600">
-                <svg className="w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                <svg className="w-5 h-5 cursor-pointer" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                   {show
                     ? <><path d="M3 12s3.5-7 9-7 9 7 9 7-3.5 7-9 7-9-7-9-7z" strokeLinecap="round"/><circle cx="12" cy="12" r="3"/></>
                     : <path d="M17.94 17.94A10.07 10.07 0 0112 20c-5.5 0-9-7-9-7a17.6 17.6 0 014.06-5.06M9.9 4.24A9.12 9.12 0 0112 4c5.5 0 9 7 9 7a17.6 17.6 0 01-2.06 3.07M3 3l18 18" strokeLinecap="round"/>
@@ -188,7 +222,7 @@ function Register({ onGoToLogin, onGoToOnboarding }: RegisterProps) {
         <button
           onClick={handleRegister}
           disabled={loading}
-          className="w-full py-4 rounded-lg text-sm font-medium bg-gray-900 text-white hover:bg-black dark:bg-gray-100 dark:text-gray-900 dark:hover:bg-white transition-colors disabled:opacity-50"
+          className="w-full py-4 rounded-lg text-sm font-medium bg-gray-900 text-white hover:bg-black dark:bg-gray-100 dark:text-gray-900 dark:hover:bg-white transition-colors disabled:opacity-50 cursor-pointer"
         >
           {loading ? "Creando cuenta..." : "Crear cuenta"}
         </button>
@@ -202,7 +236,7 @@ function Register({ onGoToLogin, onGoToOnboarding }: RegisterProps) {
 
         <p className="text-sm text-center text-gray-500 dark:text-gray-400">
           ¿Ya tienes tu cuenta?{" "}
-          <button onClick={onGoToLogin} className="underline font-medium text-gray-800 dark:text-gray-200">
+          <button onClick={onGoToLogin} className="underline font-medium text-gray-800 dark:text-gray-200 cursor-pointer">
             Ingresa aquí
           </button>
         </p>

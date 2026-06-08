@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { chatsApi, type Chat, type Message } from "../api/Chats";
 import ReactMarkdown from "react-markdown";
+import { recipesApi } from "../api/Recipes";
 
 const objectives = [
   "Aprender recetas nuevas",
@@ -17,7 +18,6 @@ interface ChatPageProps {
 }
 
 export default function ChatPage({ initialChat, onChatCreated }: ChatPageProps) {
-  console.log("ChatPage render - initialChat:", initialChat);
   const [chats, setChats] = useState<Chat[]>([]);
   const [activeChat, setActiveChat] = useState<Chat | null>(initialChat ?? null);
 
@@ -35,6 +35,7 @@ export default function ChatPage({ initialChat, onChatCreated }: ChatPageProps) 
   const [sending, setSending] = useState(false);
   const [error, setError] = useState("");
   const bottomRef = useRef<HTMLDivElement>(null);
+  const [recetasGuardadas, setRecetasGuardadas] = useState<number[]>([]);
 
   useEffect(() => {
     setError("");
@@ -112,6 +113,59 @@ export default function ChatPage({ initialChat, onChatCreated }: ChatPageProps) 
     }
   };
 
+  const formatearTextoReceta = (textoCrudo: string) => {
+    if (!textoCrudo) return "";
+
+    let textoProcesado = textoCrudo;
+
+    textoProcesado = textoProcesado.replace(/Ingredientes:\s*/gi, "### 🛒 Ingredientes\n");
+
+    textoProcesado = textoProcesado.replace(/(Pasos:|Preparación:)\s*/gi, "\n\n---\n\n### 🍳 Preparación\n");
+
+    if (textoProcesado.includes("### 🛒 Ingredientes") && textoProcesado.includes("### 🍳 Preparación")) {
+      const partes = textoProcesado.split("### 🍳 Preparación");
+      let seccionIngredientes = partes[0];
+      const seccionPasos = partes[1];
+
+      const listaIngredientes = seccionIngredientes
+        .replace("### 🛒 Ingredientes\n", "")
+        .split(",")
+        .map(ing => `* ${ing.trim()}`)
+        .join("\n");
+
+      textoProcesado = `### 🛒 Ingredientes\n${listaIngredientes}\n\n### 🍳 Preparación${seccionPasos}`;
+    }
+
+    textoProcesado = textoProcesado.replace(/\s(\d+\.)\s/g, "\n$1 ->");
+
+    textoProcesado = textoProcesado.replace(/en la mesa de \[ADDRESS\]/gi, "en la mesa")
+                                   .replace(/\[ADDRESS\]/gi, "");
+
+    return textoProcesado;
+  };
+
+  const handleGuardarReceta = async (msgId: number, titulo: string, contenido: string) => {
+    if (!activeChat || recetasGuardadas.includes(msgId)) return;
+
+    try {
+      await recipesApi.save({
+        chatId: activeChat.id,
+        recipeTitle: titulo,
+        recipeContent: contenido
+      });
+
+      setRecetasGuardadas((prev) => [...prev, msgId]);
+      
+    } catch (e: any) {
+      const errorMsg = e.message.toLowerCase();
+      if (errorMsg.includes("existe") || errorMsg.includes("duplicad")) {
+        setRecetasGuardadas((prev) => [...prev, msgId]);
+      } else {
+        setError(e.message || "Error al guardar la receta.");
+      }
+    }
+  };
+
   const toggleObjective = (obj: string) =>
     setSelectedObjectives((prev) =>
       prev.includes(obj) ? prev.filter((o) => o !== obj) : [...prev, obj]
@@ -131,44 +185,83 @@ export default function ChatPage({ initialChat, onChatCreated }: ChatPageProps) 
       </div>
 
       <div className="flex-1 overflow-y-auto flex flex-col gap-4 pb-4 scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-700">
-        {/* {messages.filter(Boolean).map((msg) => (
-          <div key={msg.id} className={`flex gap-2 ${msg.sender?.toUpperCase() === "USUARIO" ? "flex-row-reverse" : "flex-row"}`}>
-            <div className="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center shrink-0">
-              <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-gray-500" fill="currentColor" viewBox="0 0 24 24">
-                <circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
-              </svg>
-            </div>
-            <div className={`max-w-[70%] flex flex-col gap-1 ${msg.sender?.toUpperCase() === "USUARIO" ? "items-end" : "items-start"}`}>
-              <div className={`text-sm px-3 py-2 rounded-xl prose dark:prose-invert max-w-none ${
-                msg.sender?.toUpperCase() === "USUARIO" 
-                  ? "bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900" 
-                  : "bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200"
-              }`}>
-                <ReactMarkdown>{msg.content}</ReactMarkdown>
+        {messages.filter(Boolean).map((msg) => {
+          const esReceta = msg.content.includes("TÍTULO:") && msg.content.includes("CONTENIDO:");
+
+          let titulo = "";
+          let contenido = "";
+
+          if (esReceta) {
+            const partes = msg.content.split("CONTENIDO:");
+            titulo = partes[0].replace("TÍTULO:", "").trim();
+            contenido = partes[1] ? partes[1].trim() : "";
+          }
+        
+          return (
+            <div key={msg.id} className={`flex gap-2 ${msg.sender?.toUpperCase() === "USUARIO" ? "flex-row-reverse" : "flex-row"}`}>
+              <div className="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center shrink-0">
+                <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-gray-500" fill="currentColor" viewBox="0 0 24 24">
+                  <circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
+                </svg>
               </div>
-              <span className="text-xs text-gray-400">{msg.sendDate ? new Date(msg.sendDate).toLocaleDateString() : ""}</span>
-            </div>
-          </div>
-        ))} */}
-        {messages.filter(Boolean).map((msg) => (
-          <div key={msg.id} className={`flex gap-2 ${msg.sender?.toUpperCase() === "USUARIO" ? "flex-row-reverse" : "flex-row"}`}>
-            <div className="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center shrink-0">
-              <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-gray-500" fill="currentColor" viewBox="0 0 24 24">
-                <circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
-              </svg>
-            </div>
-            <div className={`max-w-[70%] flex flex-col gap-1 ${msg.sender?.toUpperCase() === "USUARIO" ? "items-end" : "items-start"}`}>
-              <div className={`text-sm px-3 py-2 rounded-xl prose dark:prose-invert max-w-none ${
-                msg.sender?.toUpperCase() === "USUARIO" 
-                  ? "bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900" 
-                  : "bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200"
-              }`}>
-                <ReactMarkdown>{msg.content}</ReactMarkdown>
+
+              <div className={`max-w-[75%] flex flex-col gap-1 ${msg.sender?.toUpperCase() === "USUARIO" ? "items-end" : "items-start"}`}>
+
+                {esReceta ? (
+                  <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl shadow-sm overflow-hidden flex flex-col w-full">
+
+                    <div className="bg-gray-50 dark:bg-gray-800/50 px-4 py-3 border-b border-gray-100 dark:border-gray-800 flex justify-between items-start gap-4">
+                      <div>
+                        <span className="text-xs font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400">Receta Sugerida</span>
+                        <h3 className="text-base font-bold text-gray-900 dark:text-gray-50 mt-0.5">{titulo}</h3>
+                      </div>
+
+                      <button 
+                        onClick={() => handleGuardarReceta(msg.id, titulo, contenido)}
+                        disabled={recetasGuardadas.includes(msg.id)}
+                        className={`mt-1 shrink-0 transition-colors ${
+                          recetasGuardadas.includes(msg.id)
+                            ? "cursor-default" // Inactivo visualmente
+                            : "text-gray-400 hover:text-amber-600 dark:hover:text-amber-400 cursor-pointer"
+                        }`}
+                        title={recetasGuardadas.includes(msg.id) ? "Receta guardada" : "Guardar receta"}
+                      >
+                        {recetasGuardadas.includes(msg.id) ? (
+                          // SVG: Check (Guardado - Inactivo)
+                          <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                          </svg>
+                        ) : (
+                          // SVG: Bookmark/Marcador (Activo para guardar)
+                          <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M17.593 3.322c1.1.128 1.907 1.077 1.907 2.185V21L12 17.25 4.5 21V5.507c0-1.108.806-2.057 1.907-2.185a48.507 48.507 0 0111.186 0z" />
+                          </svg>
+                        )}
+                      </button>
+                    </div>
+                      
+                    <div className="p-4 text-sm prose dark:prose-invert max-w-none text-gray-800 dark:text-gray-200">
+                      <ReactMarkdown>{formatearTextoReceta(contenido)}</ReactMarkdown>
+                    </div>
+                  </div>
+                ) : (
+                  <div className={`text-sm px-3 py-2 rounded-xl prose dark:prose-invert max-w-none ${
+                    msg.sender?.toUpperCase() === "USUARIO" 
+                      ? "bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 " 
+                      : "bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200"
+                  }`}>
+                    <ReactMarkdown>{msg.content}</ReactMarkdown>
+                  </div>
+                )}
+
+                <span className="text-xs text-gray-400 px-1">
+                  {msg.sendDate ? new Date(msg.sendDate).toLocaleDateString() : ""}
+                </span>
               </div>
-              <span className="text-xs text-gray-400">{msg.sendDate ? new Date(msg.sendDate).toLocaleDateString() : ""}</span>
             </div>
-          </div>
-        ))}
+          );
+        })}
+
         {sending && (
           <div className="flex gap-2">
             <div className="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center shrink-0">

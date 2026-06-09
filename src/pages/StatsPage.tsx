@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { statsApi, type OpenRouterStats, type SystemMetrics } from "../api/stats";
+import { statsApi, type OpenRouterStats, type SystemMetrics } from "../api/Stats";
 
 export default function StatsPage() {
   const [openRouterData, setOpenRouterData] = useState<OpenRouterStats | null>(null);

@@ -7,6 +7,7 @@ type View = "perfil" | "password";
 export default function AdminProfilePage() {
   const { user } = useAuth();
   const [view, setView] = useState<View>("perfil");
+  const [password, setPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
@@ -25,13 +26,33 @@ export default function AdminProfilePage() {
 
   const handleUpdatePassword = async () => {
     setError(""); setSuccess("");
-    if (!newPassword || !confirmPassword) { setError("Todos los campos son obligatorios."); return; }
-    if (newPassword !== confirmPassword) { setError("Las contraseñas no coinciden."); return; }
+
+    if (newPassword.length < 6 || confirmPassword.length < 6) {
+        setError("La contraseña debe tener al menos 6 caracteres.");
+        return;
+    }
+
+    if (!password || !newPassword || !confirmPassword) { 
+        setError("Todos los campos son obligatorios."); 
+        return; 
+    }
+
+    if (newPassword !== confirmPassword) { 
+        setError("Las nuevas contraseñas no coinciden."); 
+        return; 
+    }
+
     setLoading(true);
     try {
-      await usersApi.updateProfile({ password: newPassword });
+      await usersApi.updatePassword({ 
+          currentPassword: password, 
+          newPassword: newPassword 
+      });
+      
       setSuccess("Contraseña actualizada.");
-      setNewPassword(""); setConfirmPassword("");
+      setPassword(""); 
+      setNewPassword(""); 
+      setConfirmPassword("");
       setView("perfil");
     } catch (e: any) {
       setError(e.message);
@@ -45,19 +66,19 @@ export default function AdminProfilePage() {
       <Avatar />
 
       <div className="flex flex-col gap-1">
-        <label className="text-sm text-gray-600 dark:text-gray-400">Contraseña</label>
-        <input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)}
-          placeholder="Contraseña"
+        <label className="text-sm text-gray-600 dark:text-gray-400">Contraseña actual</label>
+        <input type="password" value={password} onChange={(e) => setPassword(e.target.value)}
+          placeholder="Contraseña actual"
           className="border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100 placeholder-gray-400 outline-none focus:ring-2 focus:ring-gray-300"/>
       </div>
 
       <div className="flex flex-col gap-2">
         <label className="text-sm text-gray-600 dark:text-gray-400">Nueva contraseña</label>
-        <input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)}
-          placeholder="Contraseña"
+        <input type="password" value={newPassword} minLength={6} onChange={(e) => setNewPassword(e.target.value)}
+          placeholder="Nueva contraseña"
           className="border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100 placeholder-gray-400 outline-none focus:ring-2 focus:ring-gray-300"/>
-        <input type="password"
-          placeholder="Contraseña"
+        <input type="password" value={confirmPassword} minLength={6} onChange={(e) => setConfirmPassword(e.target.value)}
+          placeholder="Confirmar contraseña"
           className="border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100 placeholder-gray-400 outline-none focus:ring-2 focus:ring-gray-300"/>
       </div>
 
@@ -66,11 +87,11 @@ export default function AdminProfilePage() {
 
       <div className="flex gap-3">
         <button onClick={handleUpdatePassword} disabled={loading}
-          className="flex-1 py-3 text-sm border border-gray-400 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors disabled:opacity-50">
+          className="flex-1 py-3 text-sm border border-gray-400 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-800 transition-colors cursor-pointer">
           {loading ? "Guardando..." : "Actualizar"}
         </button>
         <button onClick={() => setView("perfil")}
-          className="flex-1 py-3 text-sm border border-gray-400 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+          className="flex-1 py-3 text-sm border border-gray-400 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-800 transition-colors cursor-pointer">
           Cancelar
         </button>
       </div>
@@ -87,7 +108,7 @@ export default function AdminProfilePage() {
           <path d="M2 7l10 7 10-7" strokeLinecap="round"/>
         </svg>
         <input readOnly value={user?.email ?? ""}
-          className="flex-1 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 text-sm bg-gray-50 dark:bg-gray-800 text-gray-500 outline-none cursor-default"/>
+          className="flex-1 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 text-sm bg-gray-100 dark:bg-gray-800 text-gray-500 outline-none cursor-not-allowed"/>
       </div>
 
       <div className="flex items-center gap-3">
@@ -96,13 +117,13 @@ export default function AdminProfilePage() {
           <path d="M3 17h18M3 20h18" strokeLinecap="round"/>
         </svg>
         <input readOnly value={user?.rol ?? ""}
-          className="flex-1 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 text-sm bg-gray-100 dark:bg-gray-800 text-gray-500 outline-none cursor-default"/>
+          className="flex-1 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 text-sm bg-gray-100 dark:bg-gray-800 text-gray-500 outline-none cursor-not-allowed"/>
       </div>
 
       {success && <p className="text-xs text-green-500">{success}</p>}
 
       <button onClick={() => setView("password")}
-        className="w-full py-3 text-sm border border-gray-400 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+        className="w-full py-3 text-sm border border-gray-400 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-800 transition-colors cursor-pointer">
         Cambiar contraseña
       </button>
     </div>

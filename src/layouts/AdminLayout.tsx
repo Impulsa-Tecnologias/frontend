@@ -35,7 +35,7 @@ export default function AdminLayout() {
 
       <main className="flex-1 flex flex-col">
         <div className="p-4 flex justify-between items-center">
-          <button onClick={() => setSidebarOpen(true)} className="text-gray-700 dark:text-gray-300 hover:text-black dark:hover:text-white">
+          <button onClick={() => setSidebarOpen(true)} className="text-gray-700 dark:text-gray-300 hover:text-black dark:hover:text-white cursor-pointer">
             <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
               <circle cx="5" cy="12" r="1.5"/>
               <circle cx="12" cy="12" r="1.5"/>
@@ -43,7 +43,7 @@ export default function AdminLayout() {
             </svg>
           </button>
           <button onClick={toggleTheme} aria-label="Cambiar tema"
-            className="p-2.5 rounded-full border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+            className="p-2.5 rounded-full border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors cursor-pointer">
             {theme === "dark" ? (
               <svg className="w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                 <circle cx="12" cy="12" r="4"/>

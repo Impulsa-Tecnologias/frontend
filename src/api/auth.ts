@@ -31,4 +31,8 @@ export const authApi = {
       method: "POST",
       body: JSON.stringify(dto),
     }),
+  checkEmail: (email: string) =>
+    http<boolean>(`/api/v1/auth/check-email?email=${encodeURIComponent(email)}`, {
+      method: "GET",
+    }),
 };

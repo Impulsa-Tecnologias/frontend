@@ -34,7 +34,7 @@ export default function SidebarMenu({ onClose, onNavigate, current, onSelectChat
     <div className="flex flex-col h-full">
       <div className="flex-1 p-4 space-y-1 mt-10">
         <button onClick={() => nav("perfil")}
-          className={`flex items-center gap-3 w-full text-left px-3 py-2 rounded-lg text-sm transition-colors ${current === "perfil" ? "bg-gray-100 dark:bg-gray-800 font-medium" : "hover:bg-gray-50 dark:hover:bg-gray-800"} text-gray-800 dark:text-gray-200`}>
+          className={`flex items-center gap-3 w-full text-left px-3 py-2 rounded-lg text-sm transition-colors ${current === "perfil" ? "bg-gray-100 dark:bg-gray-800 font-medium" : "hover:bg-gray-100 dark:hover:bg-gray-800"} text-gray-800 dark:text-gray-200 cursor-pointer`}>
           <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
             <circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" strokeLinecap="round"/>
           </svg>
@@ -42,7 +42,7 @@ export default function SidebarMenu({ onClose, onNavigate, current, onSelectChat
         </button>
 
         <button onClick={() => nav("recetas")}
-          className={`flex items-center gap-3 w-full text-left px-3 py-2 rounded-lg text-sm transition-colors ${current === "recetas" ? "bg-gray-100 dark:bg-gray-800 font-medium" : "hover:bg-gray-50 dark:hover:bg-gray-800"} text-gray-800 dark:text-gray-200`}>
+          className={`flex items-center gap-3 w-full text-left px-3 py-2 rounded-lg text-sm transition-colors ${current === "recetas" ? "bg-gray-100 dark:bg-gray-800 font-medium" : "hover:bg-gray-100 dark:hover:bg-gray-800"} text-gray-800 dark:text-gray-200 cursor-pointer`}>
           <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
             <path d="M3 6h18M3 12h12M3 18h8" strokeLinecap="round"/>
           </svg>
@@ -50,7 +50,7 @@ export default function SidebarMenu({ onClose, onNavigate, current, onSelectChat
         </button>
 
         <button onClick={() => nav("chat")}
-          className={`flex items-center gap-3 w-full text-left px-3 py-2 rounded-lg text-sm transition-colors ${current === "chat" ? "bg-gray-100 dark:bg-gray-800 font-medium" : "hover:bg-gray-50 dark:hover:bg-gray-800"} text-gray-800 dark:text-gray-200`}>
+          className={`flex items-center gap-3 w-full text-left px-3 py-2 rounded-lg text-sm transition-colors ${current === "chat" ? "bg-gray-100 dark:bg-gray-800 font-medium" : "hover:bg-gray-100 dark:hover:bg-gray-800"} text-gray-800 dark:text-gray-200 cursor-pointer`}>
           <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
             <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" strokeLinecap="round" strokeLinejoin="round"/>
           </svg>
@@ -67,7 +67,7 @@ export default function SidebarMenu({ onClose, onNavigate, current, onSelectChat
           )}
           {chats.map((chat) => (
             <button key={chat.id} onClick={() => handleSelectChat(chat)}
-              className="flex items-center justify-between px-3 py-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer text-left w-full">
+              className="flex items-center justify-between px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer text-left w-full">
               <span className="text-sm text-gray-700 dark:text-gray-300 truncate">{chat.name}</span>
             </button>
           ))}
@@ -83,7 +83,7 @@ export default function SidebarMenu({ onClose, onNavigate, current, onSelectChat
           </div>
           <span className="text-sm text-gray-700 dark:text-gray-300 truncate max-w-[120px]">{user?.email ?? "Email"}</span>
         </div>
-        <button onClick={logout} className="text-gray-400 hover:text-red-500 transition-colors">
+        <button onClick={logout} className="text-gray-400 hover:text-red-500 transition-colors cursor-pointer">
           <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
             <path d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h6a2 2 0 012 2v1" strokeLinecap="round" strokeLinejoin="round"/>
           </svg>

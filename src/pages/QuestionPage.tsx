@@ -173,7 +173,7 @@ function Step4({ onBack, loading, error }: Step4Props) {
 export default function OnboardingPage() {
   const [step, setStep] = useState(0);
   const [allergy, setAllergy] = useState("");
-  const [kitchenLevel, setKitchenLevel] = useState<"BASICO" | "MEDIO" | "ALTO">("BASICO");
+  const [, setKitchenLevel] = useState<"BASICO" | "MEDIO" | "ALTO">("BASICO");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const { theme, toggleTheme } = useTheme();

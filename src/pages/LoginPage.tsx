@@ -40,6 +40,7 @@ function Login({ onGoToRegister }: LoginProps) {
     try {
       setLoading(true);
       const res = await authApi.login({ email, password });
+      console.log("Login exitoso:", res);
       login(res.token, res.email, res.rol, res.allergy ?? "", res.kitchenLevel ?? "");
     } catch (e: any) {
       console.log(e);
@@ -132,6 +133,12 @@ function Register({ onGoToLogin, onGoToOnboarding }: RegisterProps) {
 
   const handleRegister = async () => {
     setError("");
+
+    if (password.length < 6) {
+      setError("La contraseña debe tener al menos 6 caracteres.");
+      return;
+    }
+
     if (!email.trim() || !password.trim()) {
       setError("Todos los campos son obligatorios.");
       return;
@@ -201,6 +208,7 @@ function Register({ onGoToLogin, onGoToOnboarding }: RegisterProps) {
               <input
                 type={show ? "text" : "password"}
                 value={password}
+                minLength={6}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••••••"
                 className="flex-1 bg-transparent text-sm text-gray-800 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-600 outline-none"

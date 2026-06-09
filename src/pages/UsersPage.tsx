@@ -55,11 +55,11 @@ const RolIcon = () => (
 const Buttons = ({ onConfirm, onCancel, confirmLabel, loading }: { onConfirm: () => void; onCancel: () => void; confirmLabel: string; loading?: boolean }) => (
   <div className="flex gap-3 mt-4">
     <button onClick={onConfirm} disabled={loading}
-      className="flex-1 py-3 text-sm border border-gray-400 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors disabled:opacity-50">
+      className="flex-1 py-3 text-sm border border-gray-400 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-800 transition-colors disabled:opacity-50 cursor-pointer">
       {loading ? "Guardando..." : confirmLabel}
     </button>
     <button onClick={onCancel}
-      className="flex-1 py-3 text-sm border border-gray-400 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+      className="flex-1 py-3 text-sm border border-gray-400 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-800 transition-colors cursor-pointer">
       Cancelar
     </button>
   </div>
@@ -91,6 +91,11 @@ export default function UsersPage() {
 
   const isMaster = me?.rol?.toUpperCase() === "MASTER";
 
+  const validateEmail = (email: string): boolean => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email.trim());
+  };
+
   useEffect(() => {
     usersApi.getAll()
       .then(setUsers)
@@ -117,6 +122,12 @@ export default function UsersPage() {
     if (!selected) return;
     setError(""); setLoading(true);
     try {
+      if (editPassword && editPassword.length < 6) {
+        setError("La contraseña debe tener al menos 6 caracteres.");
+        setLoading(false);
+        return;
+      }
+
       const updated = await usersApi.update(selected.id, {
         allergy: allergy || undefined,
         kitchenLevel: kitchenLevel || undefined,
@@ -132,6 +143,11 @@ export default function UsersPage() {
     if (!selected) return;
     setError(""); setLoading(true);
     try {
+      if (adminPassword && adminPassword.length < 6) {
+        setError("La contraseña debe tener al menos 6 caracteres.");
+        setLoading(false);
+        return;
+      }
       const updated = await usersApi.update(selected.id, {
         password: adminPassword || undefined,
       });
@@ -152,11 +168,40 @@ export default function UsersPage() {
   const handleCreate = async () => {
     setError("");
     if (!newEmail.trim() || !newPassword.trim()) { setError("Todos los campos son obligatorios."); return; }
+
+    if (!validateEmail(newEmail)) {
+      setError("Por favor, ingresa una dirección de correo válida.");
+      return;
+    }
+
+    if (newPassword.length < 6) {
+      setError("La contraseña debe tener al menos 6 caracteres.");
+      setLoading(false);
+      return;
+    }
+    
     setLoading(true);
     try {
-      const created = await usersApi.createAdmin({ email: newEmail, password: newPassword, rol: newRol });
-      setUsers((prev) => [...prev, created]);
-      setSuccess("Usuario creado."); setNewEmail(""); setNewPassword(""); setView("list");
+      if (newRol === "ADMIN") {
+        const created = await usersApi.create({ 
+          email: newEmail, 
+          password: newPassword, 
+          rol: newRol as "ADMIN"
+        });
+        setUsers((prev) => [...prev, created]);
+      } else {
+        const created = await usersApi.create({
+          email: newEmail,
+          password: newPassword,
+          rol: newRol as "FINAL",
+          allergy: "sin alergias",
+          kitchenLevel: "BASICO",
+        });
+        setUsers((prev) => [...prev, created]);
+      }
+
+      setSuccess("Usuario creado exitosamente."); 
+      setNewEmail(""); setNewPassword(""); setView("list");
     } catch (e: any) { setError(e.message); }
     finally { setLoading(false); }
   };
@@ -180,7 +225,7 @@ export default function UsersPage() {
       </FieldRow>
       <FieldRow icon={<LockIcon />}>
         <input type="password" value={editPassword} onChange={(e) => setEditPassword(e.target.value)}
-          placeholder="Contraseña" className={inputCls}/>
+          placeholder="Contraseña" className={inputCls} minLength={6}/>
       </FieldRow>
       {error && <p className="text-xs text-red-500">{error}</p>}
       <Buttons onConfirm={handleUpdateFinal} onCancel={() => setView("list")} confirmLabel="Actualizar" loading={loading}/>
@@ -197,7 +242,7 @@ export default function UsersPage() {
       </FieldRow>
       <FieldRow icon={<LockIcon />}>
         <input type="password" value={adminPassword} onChange={(e) => setAdminPassword(e.target.value)}
-          placeholder="Contraseña" className={inputCls}/>
+          placeholder="Contraseña" className={inputCls} minLength={6}/>
       </FieldRow>
       {error && <p className="text-xs text-red-500">{error}</p>}
       <Buttons onConfirm={handleUpdateAdmin} onCancel={() => setView("list")} confirmLabel="Actualizar" loading={loading}/>
@@ -210,8 +255,8 @@ export default function UsersPage() {
       <Avatar name="Administrador" />
       <FieldRow icon={<RolIcon />}>
         <select value={newRol} onChange={(e) => setNewRol(e.target.value)} className={inputCls}>
-          <option value="ADMIN">Admin</option>
-          <option value="MASTER">Master</option>
+          {isMaster && <option value="ADMIN">Admin</option>}
+          <option value="FINAL">Usuario Final</option>
         </select>
       </FieldRow>
       <FieldRow icon={<MailIcon />}>
@@ -220,7 +265,7 @@ export default function UsersPage() {
       </FieldRow>
       <FieldRow icon={<LockIcon />}>
         <input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)}
-          placeholder="Contraseña" className={inputCls}/>
+          placeholder="Contraseña" className={inputCls} minLength={6}/>
       </FieldRow>
       {error && <p className="text-xs text-red-500">{error}</p>}
       <Buttons onConfirm={handleCreate} onCancel={() => setView("list")} confirmLabel="Crear" loading={loading}/>
@@ -245,23 +290,23 @@ export default function UsersPage() {
       {error && <p className="text-sm text-center text-red-500">{error}</p>}
       {success && <p className="text-sm text-center text-green-500">{success}</p>}
 
-      <div className="flex flex-col divide-y divide-gray-100 dark:divide-gray-800">
+      <div className="flex flex-col divide-y divide-gray-300 dark:divide-gray-800">
         {users
           .filter((u) => u.email.toLowerCase().includes(search.toLowerCase()))
           .map((u) => (
-            <div key={u.id} className="flex items-center justify-between py-3">
+            <div key={u.id} className="flex items-center justify-between py-3 hover:bg-gray-200 dark:hover:bg-gray-800 p-2">
               <div className="flex-1 min-w-0">
                 <p className="text-sm text-gray-800 dark:text-gray-200 truncate">{u.email}</p>
                 <p className="text-xs text-gray-400">{u.rol}</p>
               </div>
               <div className="flex items-center gap-3 ml-2">
-                <button onClick={() => handleEdit(u)} className="text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors">
+                <button onClick={() => handleEdit(u)} className="text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors cursor-pointer">
                   <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                     <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" strokeLinecap="round"/>
                     <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
                   </svg>
                 </button>
-                <button onClick={() => handleDelete(u.id)} className="text-gray-400 hover:text-red-500 transition-colors">
+                <button onClick={() => handleDelete(u.id)} className="text-gray-400 hover:text-red-500 transition-colors cursor-pointer">
                   <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                     <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6"/>
                   </svg>
@@ -274,10 +319,10 @@ export default function UsersPage() {
         )}
       </div>
 
-      {isMaster && (
+      {["ADMIN", "MASTER"].includes(me?.rol?.toUpperCase() || "") && (
         <div className="flex justify-end mt-4">
-          <button onClick={() => { setError(""); setView("create"); }}
-            className="p-3 rounded-xl border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+          <button onClick={() => { setError(""); setView("create"); setNewRol(isMaster ? "ADMIN" : "FINAL"); }}
+            className="p-3 rounded-xl border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-800 transition-colors cursor-pointer">
             <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
               <rect x="2" y="2" width="20" height="20" rx="3"/><path d="M12 8v8M8 12h8" strokeLinecap="round"/>
             </svg>

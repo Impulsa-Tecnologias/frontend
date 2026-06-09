@@ -39,10 +39,16 @@ export default function ProfilePage() {
 
   const handleUpdateProfile = async () => {
     setError(""); setSuccess("");
+
     setLoading(true);
     try {
-      await usersApi.updateProfile({ allergy, kitchenLevel });
-      updateProfileData(allergy, kitchenLevel);
+      if (!allergy.trim()) {
+        await usersApi.updateProfile({ allergy: "sin alergias", kitchenLevel });
+        updateProfileData("sin alergias", kitchenLevel);
+      } else {
+        await usersApi.updateProfile({ allergy, kitchenLevel });
+        updateProfileData(allergy, kitchenLevel);
+      }
       setSuccess("Información actualizada.");
       setView("perfil");
     } catch (e: any) {
@@ -54,6 +60,11 @@ export default function ProfilePage() {
 
   const handleUpdatePassword = async () => {
     setError(""); setSuccess("");
+
+    if (newPassword.length < 6 || confirmPassword.length < 6) {
+        setError("La contraseña debe tener al menos 6 caracteres.");
+        return;
+    }
 
     if (!password || !newPassword || !confirmPassword) { 
         setError("Todos los campos son obligatorios."); 
@@ -140,10 +151,10 @@ export default function ProfilePage() {
 
       <div className="flex flex-col gap-2">
         <label className="text-sm text-gray-600 dark:text-gray-400">Nueva contraseña</label>
-        <input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)}
+        <input type="password" value={newPassword} minLength={6} onChange={(e) => setNewPassword(e.target.value)}
           placeholder="Nueva contraseña"
           className="border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100 placeholder-gray-400 outline-none focus:ring-2 focus:ring-gray-300"/>
-        <input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)}
+        <input type="password" value={confirmPassword} minLength={6} onChange={(e) => setConfirmPassword(e.target.value)}
           placeholder="Confirmar contraseña"
           className="border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100 placeholder-gray-400 outline-none focus:ring-2 focus:ring-gray-300"/>
       </div>
